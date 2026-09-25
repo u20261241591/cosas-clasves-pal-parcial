@@ -1,0 +1,315 @@
+import java.util.Scanner;
+
+/*
+ * ============================================================
+ * RutaRápida - Sistema de Control de Flota de Vehículos y Consumo
+ * ============================================================
+ * Nombre: Jesús David Tovar Rojas
+ * Código: 20261241591
+ * Curso: Tecnología en Desarrollo de Software - Universidad Surcolombiana
+ * ------------------------------------------------------------
+ * Reglas del ejercicio:
+ * - Un solo archivo .java, clase principal con métodos static.
+ * - Solo se usan: Scanner, arreglos 1D/2D, if-else, switch, for,
+ *   while, do-while y métodos static.
+ * - No se usan ArrayList, Collections, Streams ni clases propias.
+ * ============================================================
+ */
+public class ControlFlotaVehiculos {
+
+    // Scanner único para todo el programa (se pasa como parámetro
+    // a los métodos que necesitan leer datos del teclado).
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+
+        // Arreglos paralelos principales de la flota.
+        String[] placas = new String[0];
+        double[] kilometros = new double[0];
+        double[] galones = new double[0];
+        boolean flotaRegistrada = false;
+
+        int opcion;
+
+        do {
+            mostrarMenu();
+            opcion = leerEntero(sc, "Seleccione una opción: ");
+
+            switch (opcion) {
+                case 1:
+                    // --- Registrar / sobrescribir datos de la flota ---
+                    int cantidad = leerEnteroPositivo(sc, "Ingrese la cantidad de vehículos de la flota: ");
+                    placas = new String[cantidad];
+                    kilometros = new double[cantidad];
+                    galones = new double[cantidad];
+                    capturarDatosFlota(sc, placas, kilometros, galones);
+                    flotaRegistrada = true;
+                    System.out.println("\n>> Flota registrada correctamente (" + cantidad + " vehículos).\n");
+                    break;
+
+                case 2:
+                    // --- Rendimiento promedio general de la flota ---
+                    if (!flotaRegistrada || placas.length == 0) {
+                        System.out.println("\n>> Primero debe registrar la flota (opción 1).\n");
+                    } else {
+                        double rendimientoPromedio = calcularRendimientoPromedio(kilometros, galones);
+                        System.out.printf("%n>> Rendimiento promedio de la flota: %.2f km/galón%n%n", rendimientoPromedio);
+                    }
+                    break;
+
+                case 3:
+                    // --- Filtrar vehículos ineficientes ---
+                    if (!flotaRegistrada || placas.length == 0) {
+                        System.out.println("\n>> Primero debe registrar la flota (opción 1).\n");
+                    } else {
+                        double limite = leerDoublePositivo(sc, "Ingrese el límite de rendimiento (km/galón): ");
+                        System.out.println();
+                        mostrarVehiculosIneficientes(placas, kilometros, galones, limite);
+                        System.out.println();
+                    }
+                    break;
+
+                case 4:
+                    // --- Vehículo con mayor recorrido ---
+                    if (!flotaRegistrada || placas.length == 0) {
+                        System.out.println("\n>> Primero debe registrar la flota (opción 1).\n");
+                    } else {
+                        int indiceMax = buscarVehiculoMasRecorrido(kilometros);
+                        System.out.println("\n>> Vehículo con mayor recorrido:");
+                        System.out.println("   Placa: " + placas[indiceMax]);
+                        System.out.printf("   Kilómetros recorridos: %.2f km%n%n", kilometros[indiceMax]);
+                    }
+                    break;
+
+                case 5:
+                    // --- Estadísticas generales ---
+                    if (!flotaRegistrada || placas.length == 0) {
+                        System.out.println("\n>> Primero debe registrar la flota (opción 1).\n");
+                    } else {
+                        generarEstadisticas(placas, kilometros, galones);
+                    }
+                    break;
+
+                case 6:
+                    System.out.println("\n>> Saliendo del sistema. ¡Hasta pronto!");
+                    break;
+
+                default:
+                    System.out.println("\n>> Opción inválida. Intente nuevamente.\n");
+            }
+
+        } while (opcion != 6);
+
+        sc.close();
+    }
+
+    // ------------------------------------------------------------
+    // Muestra el menú de opciones por consola.
+    // ------------------------------------------------------------
+    public static void mostrarMenu() {
+        System.out.println("===================================================");
+        System.out.println(" RUTARÁPIDA - CONTROL DE FLOTA DE VEHÍCULOS");
+        System.out.println("===================================================");
+        System.out.println("1. Registrar / Sobrescribir datos de la flota");
+        System.out.println("2. Consultar rendimiento promedio general (km/galón)");
+        System.out.println("3. Filtrar y mostrar vehículos ineficientes");
+        System.out.println("4. Mostrar vehículo con mayor recorrido");
+        System.out.println("5. Estadísticas");
+        System.out.println("6. Salir");
+        System.out.println("===================================================");
+    }
+
+    // ------------------------------------------------------------
+    // Captura los datos de placas, kilómetros y galones para cada
+    // vehículo, validando que los valores numéricos sean positivos.
+    // ------------------------------------------------------------
+    public static void capturarDatosFlota(Scanner sc, String[] placas, double[] kilometros, double[] galones) {
+        for (int i = 0; i < placas.length; i++) {
+            System.out.println("\n--- Vehículo " + (i + 1) + " ---");
+
+            System.out.print("Placa: ");
+            placas[i] = sc.nextLine();
+
+            kilometros[i] = leerDoublePositivo(sc, "Kilómetros recorridos: ");
+            galones[i] = leerDoublePositivo(sc, "Galones consumidos: ");
+        }
+    }
+
+    // ------------------------------------------------------------
+    // Valida que un valor double ingresado sea estrictamente
+    // positivo (mayor que cero). Repite la pregunta hasta que el
+    // dato sea válido. Controla el búfer de Scanner con nextLine().
+    // ------------------------------------------------------------
+    public static double leerDoublePositivo(Scanner sc, String mensaje) {
+        double valor;
+        while (true) {
+            System.out.print(mensaje);
+            String entrada = sc.nextLine();
+            try {
+                valor = Double.parseDouble(entrada);
+                if (valor > 0) {
+                    return valor;
+                } else {
+                    System.out.println(">> El valor debe ser positivo. Intente nuevamente.");
+                }
+            } catch (NumberFormatException e) {
+                System.out.println(">> Debe ingresar un número válido. Intente nuevamente.");
+            }
+        }
+    }
+
+    // ------------------------------------------------------------
+    // Lee un entero positivo (mayor que cero), usado para la
+    // cantidad de vehículos de la flota.
+    // ------------------------------------------------------------
+    public static int leerEnteroPositivo(Scanner sc, String mensaje) {
+        int valor;
+        while (true) {
+            System.out.print(mensaje);
+            String entrada = sc.nextLine();
+            try {
+                valor = Integer.parseInt(entrada);
+                if (valor > 0) {
+                    return valor;
+                } else {
+                    System.out.println(">> El valor debe ser positivo. Intente nuevamente.");
+                }
+            } catch (NumberFormatException e) {
+                System.out.println(">> Debe ingresar un número entero válido. Intente nuevamente.");
+            }
+        }
+    }
+
+    // ------------------------------------------------------------
+    // Lee un entero simple (usado para las opciones del menú).
+    // ------------------------------------------------------------
+    public static int leerEntero(Scanner sc, String mensaje) {
+        int valor;
+        while (true) {
+            System.out.print(mensaje);
+            String entrada = sc.nextLine();
+            try {
+                valor = Integer.parseInt(entrada);
+                return valor;
+            } catch (NumberFormatException e) {
+                System.out.println(">> Debe ingresar un número entero válido. Intente nuevamente.");
+            }
+        }
+    }
+
+    // ------------------------------------------------------------
+    // Calcula el rendimiento promedio global de la flota:
+    // rendimiento = total de kilómetros / total de galones.
+    // ------------------------------------------------------------
+    public static double calcularRendimientoPromedio(double[] kilometros, double[] galones) {
+        double totalKm = 0;
+        double totalGalones = 0;
+
+        for (int i = 0; i < kilometros.length; i++) {
+            totalKm += kilometros[i];
+            totalGalones += galones[i];
+        }
+
+        if (totalGalones == 0) {
+            return 0;
+        }
+
+        return totalKm / totalGalones;
+    }
+
+    // ------------------------------------------------------------
+    // Recorre los arreglos paralelos e imprime la placa y el
+    // rendimiento (km/galón) de los vehículos cuyo rendimiento sea
+    // estrictamente menor al límite ingresado por el usuario.
+    // ------------------------------------------------------------
+    public static void mostrarVehiculosIneficientes(String[] placas, double[] kilometros, double[] galones, double limiteRendimiento) {
+        boolean hayIneficientes = false;
+
+        System.out.println(">> Vehículos con rendimiento menor a " + limiteRendimiento + " km/galón:");
+        for (int i = 0; i < placas.length; i++) {
+            double rendimiento = kilometros[i] / galones[i];
+            if (rendimiento < limiteRendimiento) {
+                System.out.printf("   Placa: %-10s Rendimiento: %.2f km/galón%n", placas[i], rendimiento);
+                hayIneficientes = true;
+            }
+        }
+
+        if (!hayIneficientes) {
+            System.out.println("   No se encontraron vehículos ineficientes con ese límite.");
+        }
+    }
+
+    // ------------------------------------------------------------
+    // Retorna el índice del vehículo con mayor kilometraje recorrido.
+    // ------------------------------------------------------------
+    public static int buscarVehiculoMasRecorrido(double[] kilometros) {
+        int indiceMax = 0;
+        for (int i = 1; i < kilometros.length; i++) {
+            if (kilometros[i] > kilometros[indiceMax]) {
+                indiceMax = i;
+            }
+        }
+        return indiceMax;
+    }
+
+    // ------------------------------------------------------------
+    // Retorna el índice del vehículo con mayor consumo de galones.
+    // (Método de apoyo usado dentro de generarEstadisticas).
+    // ------------------------------------------------------------
+    public static int buscarVehiculoMayorConsumo(double[] galones) {
+        int indiceMax = 0;
+        for (int i = 1; i < galones.length; i++) {
+            if (galones[i] > galones[indiceMax]) {
+                indiceMax = i;
+            }
+        }
+        return indiceMax;
+    }
+
+    // ------------------------------------------------------------
+    // Genera el reporte completo de estadísticas de la flota:
+    // - Listado general (placa, km, galones y rendimiento)
+    // - Vehículo con mayor recorrido
+    // - Vehículo con mayor consumo
+    // - Promedios de recorrido y consumo
+    // ------------------------------------------------------------
+    public static void generarEstadisticas(String[] placas, double[] kilometros, double[] galones) {
+        System.out.println("\n=============== REPORTE DE ESTADÍSTICAS ===============");
+
+        // Listado general
+        System.out.println("-- Listado general de vehículos --");
+        System.out.printf("%-10s %-12s %-12s %-15s%n", "Placa", "Km", "Galones", "Rendimiento");
+        double totalKm = 0;
+        double totalGalones = 0;
+
+        for (int i = 0; i < placas.length; i++) {
+            double rendimiento = kilometros[i] / galones[i];
+            System.out.printf("%-10s %-12.2f %-12.2f %-15.2f%n", placas[i], kilometros[i], galones[i], rendimiento);
+            totalKm += kilometros[i];
+            totalGalones += galones[i];
+        }
+
+        // Vehículo con mayor recorrido
+        int indiceMayorRecorrido = buscarVehiculoMasRecorrido(kilometros);
+        System.out.println("\n-- Vehículo con mayor recorrido --");
+        System.out.println("Placa: " + placas[indiceMayorRecorrido]);
+        System.out.printf("Kilómetros: %.2f km%n", kilometros[indiceMayorRecorrido]);
+
+        // Vehículo con mayor consumo
+        int indiceMayorConsumo = buscarVehiculoMayorConsumo(galones);
+        System.out.println("\n-- Vehículo con mayor consumo --");
+        System.out.println("Placa: " + placas[indiceMayorConsumo]);
+        System.out.printf("Galones consumidos: %.2f gal%n", galones[indiceMayorConsumo]);
+
+        // Promedios
+        int cantidadVehiculos = placas.length;
+        double promedioKm = totalKm / cantidadVehiculos;
+        double promedioGalones = totalGalones / cantidadVehiculos;
+
+        System.out.println("\n-- Promedios de la flota --");
+        System.out.printf("Promedio de recorrido: %.2f km%n", promedioKm);
+        System.out.printf("Promedio de consumo: %.2f gal%n", promedioGalones);
+        System.out.printf("Rendimiento promedio general: %.2f km/galón%n", calcularRendimientoPromedio(kilometros, galones));
+
+        System.out.println("=========================================================\n");
+    }
+}
