@@ -1,0 +1,182 @@
+import java.util.Scanner;
+
+// Programa de flota de vehiculos - RutaRapida
+// Jesus David Tovar Rojas - 20261241591
+public class ControlFlota {
+
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+
+        String[] placas = new String[0];
+        double[] kilometros = new double[0];
+        double[] galones = new double[0];
+
+        int opcion;
+
+        do {
+            System.out.println("");
+            System.out.println("1. Registrar flota");
+            System.out.println("2. Rendimiento promedio de la flota");
+            System.out.println("3. Ver vehiculos ineficientes");
+            System.out.println("4. Vehiculo con mas kilometros");
+            System.out.println("5. Estadisticas");
+            System.out.println("6. Salir");
+            System.out.print("Elija una opcion: ");
+            opcion = sc.nextInt();
+
+            switch (opcion) {
+                case 1:
+                    System.out.print("Cuantos vehiculos tiene la flota? ");
+                    int n = sc.nextInt();
+                    sc.nextLine(); // limpiar el buffer
+
+                    placas = new String[n];
+                    kilometros = new double[n];
+                    galones = new double[n];
+
+                    for (int i = 0; i < n; i++) {
+                        System.out.println("Vehiculo " + (i + 1));
+
+                        System.out.print("Placa: ");
+                        placas[i] = sc.nextLine();
+
+                        double km = -1;
+                        while (km <= 0) {
+                            System.out.print("Kilometros recorridos: ");
+                            km = sc.nextDouble();
+                            if (km <= 0) {
+                                System.out.println("El dato debe ser positivo");
+                            }
+                        }
+                        kilometros[i] = km;
+
+                        double gal = -1;
+                        while (gal <= 0) {
+                            System.out.print("Galones consumidos: ");
+                            gal = sc.nextDouble();
+                            if (gal <= 0) {
+                                System.out.println("El dato debe ser positivo");
+                            }
+                        }
+                        galones[i] = gal;
+                        sc.nextLine(); // limpiar el buffer para la siguiente placa
+                    }
+                    System.out.println("Flota registrada.");
+                    break;
+
+                case 2:
+                    if (placas.length == 0) {
+                        System.out.println("Primero registre la flota.");
+                    } else {
+                        double rendProm = calcularRendimientoPromedio(kilometros, galones);
+                        System.out.println("Rendimiento promedio: " + rendProm + " km/galon");
+                    }
+                    break;
+
+                case 3:
+                    if (placas.length == 0) {
+                        System.out.println("Primero registre la flota.");
+                    } else {
+                        System.out.print("Ingrese el limite de rendimiento: ");
+                        double limite = sc.nextDouble();
+                        mostrarVehiculosIneficientes(placas, kilometros, galones, limite);
+                    }
+                    break;
+
+                case 4:
+                    if (placas.length == 0) {
+                        System.out.println("Primero registre la flota.");
+                    } else {
+                        int pos = buscarVehiculoMasRecorrido(kilometros);
+                        System.out.println("Placa: " + placas[pos]);
+                        System.out.println("Kilometros: " + kilometros[pos]);
+                    }
+                    break;
+
+                case 5:
+                    if (placas.length == 0) {
+                        System.out.println("Primero registre la flota.");
+                    } else {
+                        generarEstadisticas(placas, kilometros, galones);
+                    }
+                    break;
+
+                case 6:
+                    System.out.println("Chao");
+                    break;
+
+                default:
+                    System.out.println("Opcion invalida");
+            }
+
+        } while (opcion != 6);
+
+        sc.close();
+    }
+
+    // rendimiento = total km / total galones
+    public static double calcularRendimientoPromedio(double[] kilometros, double[] galones) {
+        double sumaKm = 0;
+        double sumaGal = 0;
+
+        for (int i = 0; i < kilometros.length; i++) {
+            sumaKm = sumaKm + kilometros[i];
+            sumaGal = sumaGal + galones[i];
+        }
+
+        return sumaKm / sumaGal;
+    }
+
+    public static void mostrarVehiculosIneficientes(String[] placas, double[] kilometros, double[] galones, double limiteRendimiento) {
+        boolean encontro = false;
+
+        for (int i = 0; i < placas.length; i++) {
+            double rend = kilometros[i] / galones[i];
+            if (rend < limiteRendimiento) {
+                System.out.println("Placa: " + placas[i] + " - Rendimiento: " + rend);
+                encontro = true;
+            }
+        }
+
+        if (!encontro) {
+            System.out.println("No hay vehiculos ineficientes");
+        }
+    }
+
+    public static int buscarVehiculoMasRecorrido(double[] kilometros) {
+        int pos = 0;
+        for (int i = 0; i < kilometros.length; i++) {
+            if (kilometros[i] > kilometros[pos]) {
+                pos = i;
+            }
+        }
+        return pos;
+    }
+
+    public static void generarEstadisticas(String[] placas, double[] kilometros, double[] galones) {
+        System.out.println("--- Listado de vehiculos ---");
+        double sumaKm = 0;
+        double sumaGal = 0;
+
+        for (int i = 0; i < placas.length; i++) {
+            double rend = kilometros[i] / galones[i];
+            System.out.println(placas[i] + " | km: " + kilometros[i] + " | gal: " + galones[i] + " | rend: " + rend);
+            sumaKm = sumaKm + kilometros[i];
+            sumaGal = sumaGal + galones[i];
+        }
+
+        int posMasKm = buscarVehiculoMasRecorrido(kilometros);
+        System.out.println("Vehiculo con mas recorrido: " + placas[posMasKm] + " (" + kilometros[posMasKm] + " km)");
+
+        int posMasGal = 0;
+        for (int i = 0; i < galones.length; i++) {
+            if (galones[i] > galones[posMasGal]) {
+                posMasGal = i;
+            }
+        }
+        System.out.println("Vehiculo con mas consumo: " + placas[posMasGal] + " (" + galones[posMasGal] + " gal)");
+
+        System.out.println("Promedio de km: " + (sumaKm / placas.length));
+        System.out.println("Promedio de galones: " + (sumaGal / placas.length));
+    }
+}
